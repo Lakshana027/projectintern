@@ -1,0 +1,3826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectFlow AI - Enterprise Project Management</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-light: #818cf8;
+            --secondary: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+        }
+
+        /* Dark Mode */
+        .dark-mode {
+            --gray-50: #111827;
+            --gray-100: #1f2937;
+            --gray-200: #374151;
+            --gray-300: #4b5563;
+            --gray-400: #6b7280;
+            --gray-500: #9ca3af;
+            --gray-600: #d1d5db;
+            --gray-700: #e5e7eb;
+            --gray-800: #f3f4f6;
+            --gray-900: #f9fafb;
+        }
+
+        .dark-mode .card,
+        .dark-mode .stat-card,
+        .dark-mode .header,
+        .dark-mode .modal,
+        .dark-mode .ai-chat {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        .dark-mode .form-input,
+        .dark-mode .form-textarea,
+        .dark-mode .form-select {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+
+        .dark-mode .task-item {
+            background: #374151;
+        }
+
+        .dark-mode .task-item:hover {
+            background: #4b5563;
+        }
+
+        .dark-mode .kanban-column {
+            background: #1f2937;
+        }
+
+        .dark-mode .kanban-card {
+            background: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-800);
+            line-height: 1.5;
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 480px;
+            padding: 40px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .login-logo i {
+            font-size: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--gray-900);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: var(--gray-500);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+            outline: none;
+            background: white;
+            color: var(--gray-800);
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-200);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 8px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gray-200);
+            color: var(--gray-600);
+        }
+
+        .btn-outline:hover {
+            background: var(--gray-50);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+            color: var(--gray-400);
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: calc(50% - 30px);
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .divider::before {
+            left: 0;
+        }
+        .divider::after {
+            right: 0;
+        }
+
+        /* Main App Layout */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .app-container.active {
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--gray-900);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s;
+            padding: 20px 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-logo {
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-nav {
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section-title {
+            padding: 0 20px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gray-400);
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--gray-300);
+            font-size: 14px;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(79, 70, 229, 0.2);
+            color: white;
+            border-left-color: var(--primary-light);
+        }
+
+        .nav-item .badge {
+            margin-left: auto;
+            background: var(--danger);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            background: var(--gray-100);
+        }
+
+        /* Header */
+        .header {
+            height: var(--header-height);
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray-600);
+        }
+
+        .search-bar {
+            position: relative;
+        }
+
+        .search-bar input {
+            padding: 10px 16px 10px 40px;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            width: 350px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+            background: var(--gray-50);
+            color: var(--gray-800);
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-icon {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--gray-50);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--gray-600);
+            transition: all 0.3s;
+        }
+
+        .header-icon:hover {
+            background: var(--gray-100);
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 12px;
+            transition: background 0.3s;
+        }
+
+        .user-menu:hover {
+            background: var(--gray-50);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--gray-800);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        /* Dashboard */
+        .dashboard {
+            padding: 30px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 5px;
+        }
+
+        .page-subtitle {
+            color: var(--gray-500);
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .stat-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 5px;
+        }
+
+        .stat-card-label {
+            color: var(--gray-500);
+            font-size: 14px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        /* Kanban */
+        .kanban-board {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 30px;
+            min-height: calc(100vh - 100px);
+        }
+
+        .kanban-column {
+            min-width: 300px;
+            flex: 1;
+            background: var(--gray-100);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+
+        .kanban-column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .kanban-column-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .kanban-count {
+            background: var(--gray-300);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .kanban-cards {
+            min-height: 200px;
+        }
+
+        .kanban-card {
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            cursor: grab;
+            transition: all 0.3s;
+            border: 1px solid var(--gray-200);
+        }
+
+        .kanban-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .kanban-card:active {
+            cursor: grabbing;
+            opacity: 0.7;
+        }
+
+        .kanban-card-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        /* AI Chat */
+        .ai-assistant {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .ai-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: var(--shadow-xl);
+            transition: all 0.3s;
+        }
+
+        .ai-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .ai-chat {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 420px;
+            height: 550px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--gray-200);
+        }
+
+        .ai-chat.active {
+            display: flex;
+        }
+
+        .ai-chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ai-chat-footer {
+            padding: 16px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            gap: 10px;
+        }
+
+        .ai-chat-footer input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .ai-chat-footer input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray-500);
+            padding: 5px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            position: sticky;
+            bottom: 0;
+            background: white;
+        }
+
+        /* Task Item */
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--gray-50);
+            border-radius: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 8px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .task-item:hover {
+            background: var(--gray-100);
+            transform: translateX(5px);
+        }
+
+        .priority-badge {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .priority-high {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+        .priority-medium {
+            background: #fefce8;
+            color: #f59e0b;
+        }
+        .priority-low {
+            background: #f0fdf4;
+            color: #10b981;
+        }
+        .priority-critical {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #dc2626;
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 2px;
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            border: 2px dashed var(--gray-300);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Risk Score */
+        .risk-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .risk-high {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        .risk-medium {
+            background: #fefce8;
+            color: #d97706;
+        }
+        .risk-low {
+            background: #f0fdf4;
+            color: #059669;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .search-bar input {
+                width: 200px;
+            }
+            .ai-chat {
+                width: calc(100vw - 40px);
+                right: -10px;
+            }
+            .header {
+                padding: 0 15px;
+            }
+            .dashboard {
+                padding: 15px;
+            }
+            .kanban-board {
+                padding: 15px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 10px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            border-bottom: 2px solid var(--gray-200);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            font-weight: 500;
+            color: var(--gray-500);
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab:hover {
+            color: var(--gray-700);
+        }
+
+        /* Checklist */
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: var(--shadow-lg);
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast-success {
+            background: #10b981;
+        }
+        .toast-error {
+            background: #ef4444;
+        }
+        .toast-info {
+            background: #3b82f6;
+        }
+        .toast-warning {
+            background: #f59e0b;
+            color: #1f2937;
+        }
+
+        /* Team Chat */
+        .chat-container {
+            display: flex;
+            height: calc(100vh - 100px);
+            gap: 20px;
+        }
+
+        .chat-sidebar {
+            width: 280px;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow-y: auto;
+        }
+
+        .chat-main {
+            flex: 1;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+
+        .message-sent {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-received {
+            background: var(--gray-100);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        /* Profile View */
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0 auto 15px;
+            border: 4px solid white;
+        }
+
+        /* Report Cards */
+        .report-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .report-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h1 class="login-title">ProjectFlow AI</h1>
+            <p class="login-subtitle">Intelligent Enterprise Project Management</p>
+            
+            <button class="btn btn-primary" style="margin-bottom:12px; background:white; color:#4285f4; border:2px solid #e5e7eb;" onclick="socialLogin('google')">
+                <i class="fab fa-google"></i> Continue with Google
+            </button>
+            
+            <button class="btn btn-primary" style="margin-bottom:20px; background:#24292e; color:white;" onclick="socialLogin('github')">
+                <i class="fab fa-github"></i> Continue with GitHub
+            </button>
+            
+            <div class="divider"><span style="background:white; padding:0 15px;">or login with email</span></div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="loginEmail" placeholder="you@company.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" style="width:16px; height:16px;"> Remember me
+                    </label>
+                    <a href="#" onclick="showForgotPassword()" style="color:var(--primary); font-weight:500; font-size:14px;">Forgot password?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+            
+            <div style="text-align:center; margin-top:20px; font-size:14px; color:var(--gray-500);">
+                Don't have an account? <a href="#" onclick="showRegister()" style="color:var(--primary); font-weight:600;">Create Account</a>
+            </div>
+            
+            <div style="text-align:center; margin-top:15px;">
+                <button class="btn btn-sm btn-outline" onclick="demoLogin()" style="width:100%;">
+                    <i class="fas fa-user-secret"></i> Quick Demo Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Page -->
+    <div id="registerPage" class="login-container" style="display: none;">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h1 class="login-title">Create Account</h1>
+            <p class="login-subtitle">Join ProjectFlow AI today</p>
+            
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="registerName" placeholder="John Doe" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="registerEmail" placeholder="you@company.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="registerPhone" placeholder="+1 (555) 000-0000">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="registerPassword" placeholder="Min. 8 characters" required minlength="8">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" class="form-input" id="registerConfirmPassword" placeholder="Confirm your password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Profile Photo URL (optional)</label>
+                    <input type="url" class="form-input" id="registerPhoto" placeholder="https://example.com/photo.jpg">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+            
+            <div style="text-align:center; margin-top:20px; font-size:14px; color:var(--gray-500);">
+                Already have an account? <a href="#" onclick="showLogin()" style="color:var(--primary); font-weight:600;">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fas fa-brain" style="color: var(--primary-light);"></i>
+                    ProjectFlow AI
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <div class="nav-item active" data-view="dashboard">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </div>
+                    <div class="nav-item" data-view="projects">
+                        <i class="fas fa-folder"></i> Projects
+                        <span class="badge" id="projectCount">3</span>
+                    </div>
+                    <div class="nav-item" data-view="kanban">
+                        <i class="fas fa-columns"></i> Kanban Board
+                    </div>
+                    <div class="nav-item" data-view="gantt">
+                        <i class="fas fa-chart-gantt"></i> Gantt Chart
+                    </div>
+                    <div class="nav-item" data-view="calendar">
+                        <i class="fas fa-calendar-alt"></i> Calendar
+                    </div>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">AI Features</div>
+                    <div class="nav-item" data-view="ai-insights">
+                        <i class="fas fa-robot"></i> AI Insights
+                    </div>
+                    <div class="nav-item" data-view="risk-analysis">
+                        <i class="fas fa-shield-alt"></i> Risk Analysis
+                    </div>
+                    <div class="nav-item" data-view="smart-prioritize">
+                        <i class="fas fa-sort-amount-down"></i> Smart Prioritize
+                    </div>
+                    <div class="nav-item" data-view="meeting-notes">
+                        <i class="fas fa-file-alt"></i> Meeting Notes AI
+                    </div>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Analytics</div>
+                    <div class="nav-item" data-view="reports">
+                        <i class="fas fa-chart-line"></i> Reports
+                    </div>
+                    <div class="nav-item" data-view="analytics">
+                        <i class="fas fa-chart-pie"></i> Analytics
+                    </div>
+                    <div class="nav-item" data-view="team-productivity">
+                        <i class="fas fa-users-cog"></i> Team Productivity
+                    </div>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Team</div>
+                    <div class="nav-item" data-view="team">
+                        <i class="fas fa-users"></i> Team Members
+                    </div>
+                    <div class="nav-item" data-view="chat">
+                        <i class="fas fa-comments"></i> Team Chat
+                    </div>
+                    <div class="nav-item" data-view="profile">
+                        <i class="fas fa-user-circle"></i> My Profile
+                    </div>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Settings</div>
+                    <div class="nav-item" data-view="settings">
+                        <i class="fas fa-cog"></i> Settings
+                    </div>
+                    <div class="nav-item" data-view="audit-log">
+                        <i class="fas fa-history"></i> Audit Log
+                    </div>
+                    <div class="nav-item" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search projects, tasks, team members..." id="globalSearch" oninput="handleGlobalSearch(this.value)">
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <button class="header-icon" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+                        <i class="fas fa-moon" id="darkModeIcon"></i>
+                    </button>
+                    <button class="header-icon" onclick="showNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-dot" id="notificationDot" style="display:none;"></span>
+                    </button>
+                    <button class="header-icon" onclick="navigateTo('chat')">
+                        <i class="fas fa-comments"></i>
+                    </button>
+                    <div class="user-menu" onclick="navigateTo('profile')">
+                        <div class="user-avatar" id="userAvatar">JD</div>
+                        <div class="user-info">
+                            <span class="user-name" id="userName">John Doe</span>
+                            <span class="user-role" id="userRole">Project Manager</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Dynamic Content Area -->
+            <div id="contentArea">
+                <!-- Dashboard View -->
+                <div id="view-dashboard" class="dashboard">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Executive Dashboard</h1>
+                            <p class="page-subtitle">AI-powered project insights and analytics</p>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-sm btn-outline" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="showNewProjectModal()">
+                                <i class="fas fa-plus"></i> New Project
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card fade-in" onclick="navigateTo('projects')">
+                            <div class="stat-card-icon" style="background:#eff6ff; color:#3b82f6;">
+                                <i class="fas fa-project-diagram"></i>
+                            </div>
+                            <div class="stat-card-value" id="statActiveProjects">3</div>
+                            <div class="stat-card-label">Active Projects</div>
+                            <div style="font-size:12px; color:#10b981; font-weight:600;">
+                                <i class="fas fa-arrow-up"></i> 12% increase
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card fade-in" onclick="navigateTo('kanban')">
+                            <div class="stat-card-icon" style="background:#f0fdf4; color:#10b981;">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="stat-card-value" id="statCompletedTasks">5</div>
+                            <div class="stat-card-label">Completed Tasks</div>
+                            <div style="font-size:12px; color:#10b981; font-weight:600;">
+                                <i class="fas fa-arrow-up"></i> 8% this week
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card fade-in" onclick="navigateTo('risk-analysis')">
+                            <div class="stat-card-icon" style="background:#fefce8; color:#f59e0b;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-card-value" id="statAtRisk">1</div>
+                            <div class="stat-card-label">Projects At Risk</div>
+                            <div style="font-size:12px; color:#ef4444; font-weight:600;">
+                                <i class="fas fa-exclamation-circle"></i> Needs attention
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card fade-in" onclick="navigateTo('ai-insights')">
+                            <div class="stat-card-icon" style="background:#fef2f2; color:#8b5cf6;">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="stat-card-value" id="statAIHealth">94%</div>
+                            <div class="stat-card-label">AI Health Score</div>
+                            <div style="font-size:12px; color:#10b981; font-weight:600;">
+                                <i class="fas fa-arrow-up"></i> 2% improvement
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Project Health Overview</h3>
+                                <div class="card-actions">
+                                    <button class="btn btn-sm btn-outline" onclick="exportChart('healthChart')">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="healthChart" height="300"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">AI Risk Assessment</h3>
+                            </div>
+                            <div class="card-body">
+                                <div id="riskSummary">
+                                    <div class="risk-indicator risk-high" style="margin-bottom:10px;">
+                                        <i class="fas fa-circle"></i> Mobile App - 78% Risk
+                                    </div>
+                                    <div class="risk-indicator risk-medium" style="margin-bottom:10px;">
+                                        <i class="fas fa-circle"></i> API Integration - 45% Risk
+                                    </div>
+                                    <div class="risk-indicator risk-low">
+                                        <i class="fas fa-circle"></i> Website Redesign - 12% Risk
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">My Tasks</h3>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-primary" onclick="showNewTaskModal()">
+                                    <i class="fas fa-plus"></i> New Task
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="task-list" id="myTasks"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Activity</h3>
+                        </div>
+                        <div class="card-body" id="activityFeed"></div>
+                    </div>
+                </div>
+                
+                <!-- Projects View -->
+                <div id="view-projects" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Projects</h1>
+                            <p class="page-subtitle">Manage all your projects</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showNewProjectModal()">
+                            <i class="fas fa-plus"></i> New Project
+                        </button>
+                    </div>
+                    <div class="stats-grid" id="projectsList"></div>
+                </div>
+                
+                <!-- Kanban View -->
+                <div id="view-kanban" style="display:none;">
+                    <div class="page-header dashboard" style="margin-bottom:0;">
+                        <div>
+                            <h1 class="page-title">Kanban Board</h1>
+                            <p class="page-subtitle">Drag and drop tasks between columns</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showNewTaskModal()">
+                            <i class="fas fa-plus"></i> New Task
+                        </button>
+                    </div>
+                    <div class="kanban-board">
+                        <div class="kanban-column">
+                            <div class="kanban-column-header">
+                                <span class="kanban-column-title">📋 To Do</span>
+                                <span class="kanban-count" id="kanban-todo-count">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanban-todo" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="kanban-column-header">
+                                <span class="kanban-column-title">🔄 In Progress</span>
+                                <span class="kanban-count" id="kanban-inprogress-count">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanban-inprogress" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="kanban-column-header">
+                                <span class="kanban-column-title">👀 Review</span>
+                                <span class="kanban-count" id="kanban-review-count">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanban-review" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="kanban-column-header">
+                                <span class="kanban-column-title">✅ Completed</span>
+                                <span class="kanban-count" id="kanban-done-count">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanban-done" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gantt View -->
+                <div id="view-gantt" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Project Timeline</h1>
+                            <p class="page-subtitle">Visual project scheduling</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body" id="ganttChart"></div>
+                    </div>
+                </div>
+                
+                <!-- AI Insights View -->
+                <div id="view-ai-insights" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">🤖 AI Insights</h1>
+                            <p class="page-subtitle">Intelligent recommendations for your projects</p>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="generateAIInsights()">
+                            <i class="fas fa-sync-alt"></i> Generate New Insights
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">AI Recommendations</h3></div>
+                        <div class="card-body" id="aiRecommendations"></div>
+                    </div>
+                </div>
+                
+                <!-- Risk Analysis View -->
+                <div id="view-risk-analysis" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">🛡️ Risk Analysis</h1>
+                            <p class="page-subtitle">Identify and mitigate project risks</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title">Risk Overview</h3></div>
+                            <div class="card-body">
+                                <canvas id="riskChart" height="300"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title">Risk Factors</h3></div>
+                            <div class="card-body" id="riskFactors"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Smart Prioritize View -->
+                <div id="view-smart-prioritize" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">📊 Smart Prioritization</h1>
+                            <p class="page-subtitle">AI-powered task prioritization</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="runSmartPrioritization()">
+                            <i class="fas fa-magic"></i> Run Prioritization
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Prioritized Task List</h3></div>
+                        <div class="card-body" id="prioritizedTasks"></div>
+                    </div>
+                </div>
+                
+                <!-- Meeting Notes AI View -->
+                <div id="view-meeting-notes" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">📝 Meeting Notes AI</h1>
+                            <p class="page-subtitle">Auto-generate meeting summaries and action items</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Generate Meeting Notes</h3></div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Meeting Title</label>
+                                <input type="text" class="form-input" id="meetingTitle" placeholder="Sprint Planning Meeting">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Participants (comma separated)</label>
+                                <input type="text" class="form-input" id="meetingParticipants" placeholder="John, Jane, Bob">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Raw Notes / Transcript</label>
+                                <textarea class="form-textarea" id="meetingRawNotes" rows="5" placeholder="Paste your meeting notes or transcript here..."></textarea>
+                            </div>
+                            <button class="btn btn-primary" onclick="generateMeetingNotes()">
+                                <i class="fas fa-robot"></i> Generate AI Summary
+                            </button>
+                            <div id="meetingNotesOutput" style="margin-top:20px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Calendar View -->
+                <div id="view-calendar" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">📅 Calendar</h1>
+                            <p class="page-subtitle">Project timeline and deadlines</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body" id="calendarView"></div>
+                    </div>
+                </div>
+                
+                <!-- Reports View -->
+                <div id="view-reports" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">📈 Reports</h1>
+                            <p class="page-subtitle">Generate and export project reports</p>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="report-card" onclick="generateReport('progress')">
+                            <i class="fas fa-chart-line" style="font-size:24px; color:#4f46e5;"></i>
+                            <h3 style="margin-top:10px;">Progress Report</h3>
+                            <p style="color:#6b7280;">Weekly project progress summary</p>
+                        </div>
+                        <div class="report-card" onclick="generateReport('risk')">
+                            <i class="fas fa-shield-alt" style="font-size:24px; color:#ef4444;"></i>
+                            <h3 style="margin-top:10px;">Risk Report</h3>
+                            <p style="color:#6b7280;">Current risk assessment</p>
+                        </div>
+                        <div class="report-card" onclick="generateReport('team')">
+                            <i class="fas fa-users" style="font-size:24px; color:#10b981;"></i>
+                            <h3 style="margin-top:10px;">Team Performance</h3>
+                            <p style="color:#6b7280;">Team productivity metrics</p>
+                        </div>
+                        <div class="report-card" onclick="generateReport('budget')">
+                            <i class="fas fa-dollar-sign" style="font-size:24px; color:#f59e0b;"></i>
+                            <h3 style="margin-top:10px;">Budget Report</h3>
+                            <p style="color:#6b7280;">Budget utilization analysis</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analytics View -->
+                <div id="view-analytics" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">📊 Analytics</h1>
+                            <p class="page-subtitle">Deep dive into project metrics</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Velocity Chart</h3></div>
+                        <div class="card-body">
+                            <canvas id="velocityChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Team Productivity View -->
+                <div id="view-team-productivity" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">👥 Team Productivity</h1>
+                            <p class="page-subtitle">Monitor team performance</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Team Member Performance</h3></div>
+                        <div class="card-body" id="teamProductivityTable"></div>
+                    </div>
+                </div>
+                
+                <!-- Team Members View -->
+                <div id="view-team" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">👥 Team Members</h1>
+                            <p class="page-subtitle">Manage your team</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showInviteMemberModal()">
+                            <i class="fas fa-user-plus"></i> Invite Member
+                        </button>
+                    </div>
+                    <div class="stats-grid" id="teamMembersList"></div>
+                </div>
+                
+                <!-- Team Chat View -->
+                <div id="view-chat" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">💬 Team Chat</h1>
+                            <p class="page-subtitle">Real-time communication</p>
+                        </div>
+                    </div>
+                    <div class="card" style="height:calc(100vh - 200px);">
+                        <div class="chat-container" style="height:100%;">
+                            <div class="chat-sidebar" id="chatUsers" style="padding:15px;"></div>
+                            <div class="chat-main">
+                                <div class="chat-messages" id="chatMessages"></div>
+                                <div class="chat-input-area">
+                                    <input type="text" class="form-input" id="chatInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                                    <button class="btn btn-primary" onclick="sendChatMessage()" style="width:auto;">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile View -->
+                <div id="view-profile" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">👤 My Profile</h1>
+                        </div>
+                    </div>
+                    <div class="profile-header">
+                        <div class="profile-avatar" id="profileAvatar">JD</div>
+                        <h2 id="profileName">John Doe</h2>
+                        <p id="profileEmail">john@example.com</p>
+                        <p id="profileRole">Project Manager</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Edit Profile</h3></div>
+                        <div class="card-body">
+                            <form id="profileForm" onsubmit="updateProfile(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-input" id="profileNameInput" value="John Doe">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-input" id="profileEmailInput" value="john@example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Phone</label>
+                                    <input type="tel" class="form-input" id="profilePhoneInput" placeholder="+1 (555) 000-0000">
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings View -->
+                <div id="view-settings" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">⚙️ Settings</h1>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Theme</label>
+                                <button class="btn btn-outline" onclick="toggleDarkMode()">
+                                    <i class="fas fa-moon"></i> Toggle Dark Mode
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Notifications</label>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="emailNotif" checked onchange="saveSettings()">
+                                    <label for="emailNotif">Email Notifications</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="pushNotif" checked onchange="saveSettings()">
+                                    <label for="pushNotif">Push Notifications</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="desktopNotif" onchange="saveSettings()">
+                                    <label for="desktopNotif">Desktop Notifications</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default View</label>
+                                <select class="form-select" id="defaultView" onchange="saveSettings()">
+                                    <option value="dashboard">Dashboard</option>
+                                    <option value="kanban">Kanban Board</option>
+                                    <option value="projects">Projects</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Audit Log View -->
+                <div id="view-audit-log" class="dashboard" style="display:none;">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">📜 Audit Log</h1>
+                            <p class="page-subtitle">Track all system activities</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="exportAuditLog()">
+                            <i class="fas fa-download"></i> Export Log
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-body" id="auditLogTable"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- AI Chat Widget -->
+    <div class="ai-assistant">
+        <button class="ai-toggle" onclick="toggleAIChat()" title="AI Assistant">
+            <i class="fas fa-robot"></i>
+        </button>
+        <div class="ai-chat" id="aiChat">
+            <div class="ai-chat-header">
+                <span><i class="fas fa-robot"></i> AI Project Assistant</span>
+                <button style="background:none;border:none;color:white;cursor:pointer;font-size:20px;" onclick="toggleAIChat()">✕</button>
+            </div>
+            <div class="ai-chat-body" id="aiChatBody">
+                <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <i class="fas fa-robot" style="color: var(--primary); font-size:20px;"></i>
+                    <div style="background:var(--gray-100); padding:12px 16px; border-radius:12px; font-size:14px;">
+                        Hello! I'm your AI project assistant. I can help with:<br>
+                        • Project risk analysis<br>
+                        • Task prioritization<br>
+                        • Meeting notes generation<br>
+                        • Sprint planning<br>
+                        Ask me anything!
+                    </div>
+                </div>
+            </div>
+            <div class="ai-chat-footer">
+                <input type="text" id="aiInput" placeholder="Ask about your projects..." onkeypress="if(event.key==='Enter') sendAIMessage()">
+                <button onclick="sendAIMessage()" style="padding:10px 20px; background:var(--primary); color:white; border:none; border-radius:12px; cursor:pointer;">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New Project Modal -->
+    <div class="modal-overlay" id="newProjectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Project</h3>
+                <button class="modal-close" onclick="closeModal('newProjectModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="newProjectForm" onsubmit="createProject(event)">
+                    <div class="form-group">
+                        <label class="form-label">Project Name *</label>
+                        <input type="text" class="form-input" id="projectName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="projectDescription" rows="3"></textarea>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" id="projectPriority">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="CRITICAL">Critical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" id="projectDepartment">
+                                <option>Engineering</option>
+                                <option>Design</option>
+                                <option>Marketing</option>
+                                <option>Sales</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-input" id="projectStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-input" id="projectEndDate">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Budget ($)</label>
+                        <input type="number" class="form-input" id="projectBudget" placeholder="50000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Client Name</label>
+                        <input type="text" class="form-input" id="projectClient">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tags (comma separated)</label>
+                        <input type="text" class="form-input" id="projectTags" placeholder="web, redesign, urgent">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Attachments</label>
+                        <div class="file-upload-area" onclick="document.getElementById('projectFile').click()">
+                            <i class="fas fa-cloud-upload-alt" style="font-size:24px; color:var(--gray-400);"></i>
+                            <p>Click to upload files (PDF, DOCX, Images)</p>
+                            <p id="fileUploadStatus" style="font-size:12px; color:#10b981;"></p>
+                        </div>
+                        <input type="file" id="projectFile" style="display:none;" multiple onchange="handleFileUpload(this)">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('newProjectModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="document.getElementById('newProjectForm').requestSubmit()">
+                    <i class="fas fa-plus"></i> Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New Task Modal -->
+    <div class="modal-overlay" id="newTaskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Task</h3>
+                <button class="modal-close" onclick="closeModal('newTaskModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="newTaskForm" onsubmit="createTask(event)">
+                    <div class="form-group">
+                        <label class="form-label">Task Title *</label>
+                        <input type="text" class="form-input" id="taskTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="taskDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Project</label>
+                        <select class="form-select" id="taskProject">
+                            <option value="">Select Project</option>
+                        </select>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" id="taskPriority">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="CRITICAL">Critical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" class="form-input" id="taskDueDate">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">Estimated Hours</label>
+                            <input type="number" class="form-input" id="taskEstHours" placeholder="8">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Assignee</label>
+                            <select class="form-select" id="taskAssignee">
+                                <option value="">Select Assignee</option>
+                                <option value="John Doe">John Doe</option>
+                                <option value="Jane Smith">Jane Smith</option>
+                                <option value="Bob Johnson">Bob Johnson</option>
+                                <option value="Alice Williams">Alice Williams</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tags (comma separated)</label>
+                        <input type="text" class="form-input" id="taskTags" placeholder="frontend, urgent">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Subtasks</label>
+                        <div id="subtasksList">
+                            <div class="checklist-item">
+                                <input type="checkbox" id="subtask1">
+                                <input type="text" class="form-input" placeholder="Subtask 1" style="flex:1;">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="addSubtask()" style="margin-top:8px;">
+                            <i class="fas fa-plus"></i> Add Subtask
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('newTaskModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="document.getElementById('newTaskForm').requestSubmit()">
+                    <i class="fas fa-plus"></i> Create Task
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Invite Member Modal -->
+    <div class="modal-overlay" id="inviteMemberModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Invite Team Member</h3>
+                <button class="modal-close" onclick="closeModal('inviteMemberModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="inviteMemberForm" onsubmit="inviteMember(event)">
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-input" id="inviteEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="inviteRole">
+                            <option>Developer</option>
+                            <option>Designer</option>
+                            <option>Project Manager</option>
+                            <option>Tester</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message (optional)</label>
+                        <textarea class="form-textarea" id="inviteMessage" rows="3" placeholder="Join our project team!"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('inviteMemberModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="document.getElementById('inviteMemberForm').requestSubmit()">
+                    <i class="fas fa-envelope"></i> Send Invitation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== APPLICATION STATE ====================
+        const APP_STATE = {
+            isLoggedIn: false,
+            currentUser: null,
+            currentView: 'dashboard',
+            darkMode: false,
+            chatMessages: [],
+            projects: [
+                { id: 1, name: 'Website Redesign', description: 'Complete overhaul of company website', status: 'IN_PROGRESS',
+                    priority: 'HIGH', progress: 65, health: 92, budget: 75000, department: 'Design', client: 'Acme Corp',
+                    tags: ['web', 'redesign'], startDate: '2024-01-01', endDate: '2024-06-30',
+                    tasks: { todo: ['Design mockups', 'Content creation', 'SEO optimization'], inProgress: [
+                            'Frontend development', 'Backend integration'
+                        ], review: ['User testing'], completed: ['Requirements gathering', 'Wireframing',
+                            'Database design'
+                        ] } },
+                { id: 2, name: 'Mobile App Development', description: 'iOS and Android app', status: 'IN_PROGRESS',
+                    priority: 'CRITICAL', progress: 40, health: 65, budget: 120000, department: 'Engineering',
+                    client: 'TechStart Inc', tags: ['mobile', 'ios', 'android'], startDate: '2024-02-01', endDate: '2024-08-31',
+                    tasks: { todo: ['Push notifications', 'Payment integration'], inProgress: ['API development',
+                            'UI implementation'
+                        ], review: [], completed: ['Project setup', 'Architecture design'] } },
+                { id: 3, name: 'API Integration', description: 'Third-party API integration', status: 'PLANNING',
+                    priority: 'MEDIUM', progress: 10, health: 95, budget: 30000, department: 'Engineering', client: 'Internal',
+                    tags: ['api', 'integration'], startDate: '2024-03-01', endDate: '2024-05-31',
+                    tasks: { todo: ['Documentation', 'Testing'], inProgress: [], review: [], completed: ['Planning'] } }
+            ],
+            tasks: [],
+            teamMembers: [
+                { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Project Manager', status: 'Online',
+                    avatar: 'JD', tasksCompleted: 45, color: '#4f46e5' },
+                { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Senior Developer', status: 'Online',
+                    avatar: 'JS', tasksCompleted: 38, color: '#7c3aed' },
+                { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'Developer', status: 'Away',
+                    avatar: 'BJ', tasksCompleted: 22, color: '#2563eb' },
+                { id: 4, name: 'Alice Williams', email: 'alice@example.com', role: 'Designer', status: 'Online',
+                    avatar: 'AW', tasksCompleted: 30, color: '#f59e0b' },
+            ],
+            notifications: [
+                { id: 1, message: 'Task "Design homepage" assigned to you', type: 'task', read: false, time: '5 min ago' },
+                { id: 2, message: 'Mobile App project health dropped to 65%', type: 'risk', read: false,
+                time: '1 hour ago' },
+                { id: 3, message: 'Sprint review meeting tomorrow at 10 AM', type: 'meeting', read: true,
+                time: '3 hours ago' },
+                { id: 4, message: 'New team member Alice joined', type: 'team', read: false, time: '4 hours ago' },
+            ],
+            auditLogs: [],
+            socket: null,
+            charts: {}
+        };
+
+        // Initialize tasks from projects
+        function initializeTasks() {
+            APP_STATE.tasks = [];
+            let taskId = 1;
+            APP_STATE.projects.forEach(project => {
+                Object.keys(project.tasks).forEach(status => {
+                    project.tasks[status].forEach(taskName => {
+                        APP_STATE.tasks.push({
+                            id: taskId++,
+                            title: taskName,
+                            projectId: project.id,
+                            projectName: project.name,
+                            status: status === 'todo' ? 'TODO' : status === 'inProgress' ? 'IN_PROGRESS' : status ===
+                                'review' ? 'REVIEW' : 'DONE',
+                            priority: project.priority,
+                            dueDate: project.endDate || '2024-12-31',
+                            assignee: ['John Doe', 'Jane Smith', 'Bob Johnson', 'Alice Williams'][Math.floor(Math.random() * 4)],
+                            estimatedHours: Math.floor(Math.random() * 20) + 4,
+                            tags: project.tags || []
+                        });
+                    });
+                });
+            });
+        }
+
+        initializeTasks();
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthState();
+            initializeNavigation();
+            initializeSocket();
+            loadSettingsFromStorage();
+        });
+
+        function checkAuthState() {
+            const token = localStorage.getItem('authToken');
+            const savedUser = localStorage.getItem('currentUser');
+            if (token && savedUser) {
+                APP_STATE.isLoggedIn = true;
+                APP_STATE.currentUser = JSON.parse(savedUser);
+                showApp();
+            } else {
+                showLogin();
+            }
+        }
+
+        function initializeNavigation() {
+            document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+                item.addEventListener('click', function() {
+                    const view = this.getAttribute('data-view');
+                    navigateTo(view);
+                });
+            });
+
+            // Close modals on overlay click
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        function loadSettingsFromStorage() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                APP_STATE.darkMode = true;
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeIcon').className = 'fas fa-sun';
+            }
+            const defaultView = localStorage.getItem('defaultView');
+            if (defaultView) {
+                document.getElementById('defaultView').value = defaultView;
+            }
+        }
+
+        // ==================== AUTHENTICATION ====================
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (email && password) {
+                const token = 'jwt-' + Date.now() + '-' + Math.random().toString(36).substr(2);
+                const user = {
+                    id: 1,
+                    name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    email: email,
+                    role: 'PROJECT_MANAGER',
+                    initials: email.substring(0, 2).toUpperCase(),
+                    photo: null,
+                    phone: ''
+                };
+
+                localStorage.setItem('authToken', token);
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                APP_STATE.isLoggedIn = true;
+                APP_STATE.currentUser = user;
+                addAuditLog('LOGIN', `User ${user.name} logged in`);
+                showApp();
+                showToast('Successfully logged in!', 'success');
+            }
+        }
+
+        function demoLogin() {
+            const user = {
+                id: 1,
+                name: 'John Doe',
+                email: 'john@example.com',
+                role: 'PROJECT_MANAGER',
+                initials: 'JD',
+                photo: null,
+                phone: '+1 (555) 123-4567'
+            };
+            localStorage.setItem('authToken', 'demo-token-' + Date.now());
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            APP_STATE.isLoggedIn = true;
+            APP_STATE.currentUser = user;
+            addAuditLog('LOGIN', 'Demo user logged in');
+            showApp();
+            showToast('Welcome to the demo!', 'success');
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const phone = document.getElementById('registerPhone').value;
+            const photo = document.getElementById('registerPhoto').value;
+
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match!', 'error');
+                return;
+            }
+
+            const token = 'jwt-' + Date.now();
+            const user = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                role: 'DEVELOPER',
+                initials: name.split(' ').map(n => n[0]).join('').toUpperCase(),
+                phone: phone,
+                photo: photo || null
+            };
+
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            APP_STATE.isLoggedIn = true;
+            APP_STATE.currentUser = user;
+            addAuditLog('REGISTER', `New user ${name} registered`);
+            showApp();
+            showToast('Account created successfully!', 'success');
+        }
+
+        function handleLogout() {
+            addAuditLog('LOGOUT', `User ${APP_STATE.currentUser?.name} logged out`);
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            APP_STATE.isLoggedIn = false;
+            APP_STATE.currentUser = null;
+            APP_STATE.chatMessages = [];
+            if (APP_STATE.socket) APP_STATE.socket.disconnect();
+            // Destroy all charts
+            Object.values(APP_STATE.charts).forEach(chart => chart.destroy());
+            APP_STATE.charts = {};
+            showLogin();
+            showToast('Logged out successfully', 'info');
+        }
+
+        function socialLogin(provider) {
+            const token = 'social-' + provider + '-' + Date.now();
+            const user = {
+                id: Date.now(),
+                name: provider === 'google' ? 'Google User' : 'GitHub User',
+                email: `${provider}@example.com`,
+                role: 'DEVELOPER',
+                initials: provider === 'google' ? 'GU' : 'GH',
+                photo: null,
+                phone: ''
+            };
+
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            APP_STATE.isLoggedIn = true;
+            APP_STATE.currentUser = user;
+            addAuditLog('LOGIN', `User logged in via ${provider}`);
+            showApp();
+            showToast(`Logged in with ${provider}`, 'success');
+        }
+
+        function showForgotPassword() {
+            const email = document.getElementById('loginEmail').value;
+            if (email) {
+                showToast('Password reset link sent to ' + email, 'info');
+            } else {
+                showToast('Please enter your email address first', 'warning');
+            }
+        }
+
+        // ==================== UI NAVIGATION ====================
+        function showLogin() {
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('registerPage').style.display = 'none';
+            document.getElementById('appContainer').classList.remove('active');
+        }
+
+        function showRegister() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('registerPage').style.display = 'flex';
+            document.getElementById('appContainer').classList.remove('active');
+        }
+
+        function showApp() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('registerPage').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+
+            if (APP_STATE.currentUser) {
+                document.getElementById('userAvatar').textContent = APP_STATE.currentUser.initials;
+                document.getElementById('userName').textContent = APP_STATE.currentUser.name;
+                document.getElementById('userRole').textContent = APP_STATE.currentUser.role.replace('_', ' ');
+            }
+
+            navigateTo('dashboard');
+            updateNotificationDot();
+        }
+
+        function navigateTo(view) {
+            APP_STATE.currentView = view;
+
+            // Update navigation active state
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            const activeNav = document.querySelector(`.nav-item[data-view="${view}"]`);
+            if (activeNav) activeNav.classList.add('active');
+
+            // Hide all views
+            document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
+
+            // Show selected view
+            const viewElement = document.getElementById(`view-${view}`);
+            if (viewElement) {
+                viewElement.style.display = 'block';
+            }
+
+            // Load view-specific data
+            switch (view) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'projects':
+                    loadProjects();
+                    break;
+                case 'kanban':
+                    loadKanban();
+                    break;
+                case 'gantt':
+                    loadGantt();
+                    break;
+                case 'ai-insights':
+                    loadAIInsights();
+                    break;
+                case 'risk-analysis':
+                    loadRiskAnalysis();
+                    break;
+                case 'smart-prioritize':
+                    loadSmartPrioritize();
+                    break;
+                case 'meeting-notes':
+                    // Just show the form
+                    break;
+                case 'calendar':
+                    loadCalendar();
+                    break;
+                case 'reports':
+                    // Static content
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+                case 'team-productivity':
+                    loadTeamProductivity();
+                    break;
+                case 'team':
+                    loadTeamMembers();
+                    break;
+                case 'chat':
+                    loadChat();
+                    break;
+                case 'profile':
+                    loadProfile();
+                    break;
+                case 'settings':
+                    loadSettings();
+                    break;
+                case 'audit-log':
+                    loadAuditLog();
+                    break;
+            }
+
+            // Close sidebar on mobile
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function toggleDarkMode() {
+            APP_STATE.darkMode = !APP_STATE.darkMode;
+            document.body.classList.toggle('dark-mode', APP_STATE.darkMode);
+            const icon = document.getElementById('darkModeIcon');
+            if (icon) {
+                icon.className = APP_STATE.darkMode ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            localStorage.setItem('darkMode', APP_STATE.darkMode);
+            showToast(`Dark mode ${APP_STATE.darkMode ? 'enabled' : 'disabled'}`, 'info');
+        }
+
+        // ==================== DASHBOARD ====================
+        function loadDashboard() {
+            updateStats();
+            loadTasks();
+            loadActivityFeed();
+            initializeHealthChart();
+            updateProjectCount();
+        }
+
+        function refreshDashboard() {
+            loadDashboard();
+            showToast('Dashboard refreshed', 'info');
+        }
+
+        function updateStats() {
+            const activeProjects = APP_STATE.projects.filter(p => p.status === 'IN_PROGRESS').length;
+            const completedTasks = APP_STATE.tasks.filter(t => t.status === 'DONE').length;
+            const atRiskProjects = APP_STATE.projects.filter(p => p.health < 70).length;
+
+            document.getElementById('statActiveProjects').textContent = activeProjects;
+            document.getElementById('statCompletedTasks').textContent = completedTasks;
+            document.getElementById('statAtRisk').textContent = atRiskProjects;
+            document.getElementById('statAIHealth').textContent = Math.floor(85 + Math.random() * 15) + '%';
+        }
+
+        function updateProjectCount() {
+            document.getElementById('projectCount').textContent = APP_STATE.projects.length;
+        }
+
+        function loadTasks() {
+            const container = document.getElementById('myTasks');
+            if (!container) return;
+
+            const displayTasks = APP_STATE.tasks.slice(0, 8);
+
+            container.innerHTML = displayTasks.map(task => `
+                <div class="task-item" onclick="editTask(${task.id})">
+                    <div class="task-checkbox" 
+                         onclick="event.stopPropagation(); toggleTaskStatus(${task.id}, this)" 
+                         style="width:22px; height:22px; border:2px solid #d1d5db; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; ${task.status === 'DONE' ? 'background:#10b981; border-color:#10b981; color:white;' : ''}">
+                        ${task.status === 'DONE' ? '<i class="fas fa-check"></i>' : ''}
+                    </div>
+                    <div class="task-content" style="flex:1;">
+                        <div class="task-title" style="font-weight:600;">${task.title}</div>
+                        <div class="task-meta" style="font-size:12px; color:#6b7280;">
+                            <span><i class="fas fa-folder"></i> ${task.projectName}</span>
+                            <span style="margin-left:10px;"><i class="fas fa-calendar"></i> ${task.dueDate}</span>
+                            <span style="margin-left:10px;"><i class="fas fa-clock"></i> ${task.estimatedHours}h</span>
+                            <span style="margin-left:10px;"><i class="fas fa-user"></i> ${task.assignee}</span>
+                        </div>
+                    </div>
+                    <span class="priority-badge priority-${task.priority.toLowerCase()}">${task.priority}</span>
+                    <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); deleteTask(${task.id})" style="margin-left:5px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function loadActivityFeed() {
+            const activities = [
+                { user: 'JD', action: 'completed task', target: 'Design homepage', time: '2 min ago', color: '#4f46e5' },
+                { user: 'JS', action: 'commented on', target: 'API integration', time: '15 min ago', color: '#7c3aed' },
+                { user: 'AI', action: 'generated risk report for', target: 'Mobile App', time: '1 hour ago', color: '#10b981' },
+                { user: 'BJ', action: 'created task', target: 'Update dependencies', time: '2 hours ago', color: '#2563eb' },
+                { user: 'AW', action: 'joined project', target: 'Website Redesign', time: '4 hours ago', color: '#f59e0b' },
+            ];
+
+            const feedContainer = document.getElementById('activityFeed');
+            if (feedContainer) {
+                feedContainer.innerHTML = activities.map(a => `
+                    <div style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #e5e7eb;">
+                        <div style="width:32px; height:32px; border-radius:8px; background:${a.color}; display:flex; align-items:center; justify-content:center; font-weight:600; color:white; font-size:12px;">${a.user}</div>
+                        <div>
+                            <div style="font-size:14px;"><strong>${a.user}</strong> ${a.action} <strong>${a.target}</strong></div>
+                            <div style="font-size:12px; color:#9ca3af;">${a.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function initializeHealthChart() {
+            const canvas = document.getElementById('healthChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            // Destroy existing chart
+            if (APP_STATE.charts.healthChart) {
+                APP_STATE.charts.healthChart.destroy();
+            }
+
+            APP_STATE.charts.healthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                    datasets: [{
+                        label: 'Website Redesign',
+                        data: [95, 93, 91, 94, 92, 94],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79,70,229,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Mobile App',
+                        data: [88, 85, 82, 80, 78, 65],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'API Integration',
+                        data: [98, 97, 96, 95, 95, 95],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            min: 50, 
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        } 
+                    }
+                }
+            });
+        }
+
+        function toggleTaskStatus(taskId, element) {
+            const task = APP_STATE.tasks.find(t => t.id === taskId);
+            if (task) {
+                const oldStatus = task.status;
+                task.status = task.status === 'DONE' ? 'TODO' : 'DONE';
+                element.style.background = task.status === 'DONE' ? '#10b981' : '';
+                element.style.borderColor = task.status === 'DONE' ? '#10b981' : '#d1d5db';
+                element.style.color = task.status === 'DONE' ? 'white' : '';
+                element.innerHTML = task.status === 'DONE' ? '<i class="fas fa-check"></i>' : '';
+                addAuditLog('TASK_UPDATE', `Task "${task.title}" moved from ${oldStatus} to ${task.status}`);
+                showToast(`Task ${task.status === 'DONE' ? 'completed' : 'reopened'}!`, 'success');
+                updateStats();
+                if (APP_STATE.currentView === 'kanban') loadKanban();
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const task = APP_STATE.tasks.find(t => t.id === taskId);
+                APP_STATE.tasks = APP_STATE.tasks.filter(t => t.id !== taskId);
+                addAuditLog('TASK_DELETE', `Task "${task?.title}" deleted`);
+                loadTasks();
+                if (APP_STATE.currentView === 'kanban') loadKanban();
+                updateStats();
+                showToast('Task deleted successfully', 'info');
+            }
+        }
+
+        function editTask(taskId) {
+            const task = APP_STATE.tasks.find(t => t.id === taskId);
+            if (task) {
+                showToast(`Editing task: ${task.title}`, 'info');
+                // In production, this would open an edit modal
+            }
+        }
+
+        // ==================== PROJECTS ====================
+        function loadProjects() {
+            const container = document.getElementById('projectsList');
+            if (!container) return;
+
+            container.innerHTML = APP_STATE.projects.map(project => `
+                <div class="stat-card" style="cursor:pointer;">
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <h3 style="font-size:18px;">${project.name}</h3>
+                        <span class="priority-badge priority-${project.priority.toLowerCase()}">${project.priority}</span>
+                    </div>
+                    <p style="color:#6b7280; font-size:14px; margin:8px 0;">${project.description}</p>
+                    <div style="margin:10px 0;">
+                        <span style="font-size:12px; color:#6b7280;">Progress: ${project.progress}%</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:${project.progress}%;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:15px; font-size:13px; color:#6b7280; flex-wrap:wrap;">
+                        <span>💰 $${project.budget?.toLocaleString() || 'N/A'}</span>
+                        <span>🏥 Health: ${project.health}%</span>
+                        <span>📅 ${project.endDate || 'TBD'}</span>
+                        <span>👤 ${project.client || 'N/A'}</span>
+                    </div>
+                    <div style="margin-top:8px;">
+                        ${(project.tags || []).map(tag => `<span class="tag" style="background:#eff6ff; color:#3b82f6;">#${tag}</span>`).join(' ')}
+                    </div>
+                    <div style="margin-top:10px; display:flex; gap:8px;">
+                        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); viewProjectDetail(${project.id})">
+                            <i class="fas fa-eye"></i> Details
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteProject(${project.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            updateProjectCount();
+        }
+
+        function viewProjectDetail(projectId) {
+            const project = APP_STATE.projects.find(p => p.id === projectId);
+            if (project) {
+                const taskCount = APP_STATE.tasks.filter(t => t.projectId === projectId).length;
+                const completedCount = APP_STATE.tasks.filter(t => t.projectId === projectId && t.status === 'DONE').length;
+                showToast(`${project.name}: ${completedCount}/${taskCount} tasks completed | Health: ${project.health}%`, 'info');
+            }
+        }
+
+        function deleteProject(projectId) {
+            if (confirm('Are you sure you want to delete this project? All associated tasks will also be deleted.')) {
+                const project = APP_STATE.projects.find(p => p.id === projectId);
+                APP_STATE.projects = APP_STATE.projects.filter(p => p.id !== projectId);
+                APP_STATE.tasks = APP_STATE.tasks.filter(t => t.projectId !== projectId);
+                addAuditLog('PROJECT_DELETE', `Project "${project?.name}" deleted`);
+                loadProjects();
+                updateStats();
+                updateProjectCount();
+                showToast('Project deleted successfully', 'info');
+            }
+        }
+
+        function showNewProjectModal() {
+            document.getElementById('newProjectModal').classList.add('active');
+            document.getElementById('projectStartDate').value = new Date().toISOString().split('T')[0];
+            const endDate = new Date();
+            endDate.setMonth(endDate.getMonth() + 3);
+            document.getElementById('projectEndDate').value = endDate.toISOString().split('T')[0];
+        }
+
+        function createProject(event) {
+            event.preventDefault();
+            const name = document.getElementById('projectName').value;
+            const description = document.getElementById('projectDescription').value;
+            const priority = document.getElementById('projectPriority').value;
+            const department = document.getElementById('projectDepartment').value;
+            const startDate = document.getElementById('projectStartDate').value;
+            const endDate = document.getElementById('projectEndDate').value;
+            const budget = document.getElementById('projectBudget').value;
+            const client = document.getElementById('projectClient').value;
+            const tags = document.getElementById('projectTags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+            const newProject = {
+                id: APP_STATE.projects.length + 1,
+                name,
+                description,
+                status: 'PLANNING',
+                priority,
+                progress: 0,
+                health: 100,
+                budget: parseInt(budget) || 0,
+                department,
+                client,
+                tags,
+                startDate,
+                endDate,
+                tasks: { todo: [], inProgress: [], review: [], completed: [] }
+            };
+
+            APP_STATE.projects.push(newProject);
+            addAuditLog('PROJECT_CREATE', `Project "${name}" created`);
+            closeModal('newProjectModal');
+            document.getElementById('newProjectForm').reset();
+            updateProjectCount();
+            updateStats();
+            if (APP_STATE.currentView === 'projects') loadProjects();
+            showToast('Project created successfully!', 'success');
+        }
+
+        // ==================== KANBAN ====================
+        function loadKanban() {
+            const columns = {
+                'kanban-todo': APP_STATE.tasks.filter(t => t.status === 'TODO'),
+                'kanban-inprogress': APP_STATE.tasks.filter(t => t.status === 'IN_PROGRESS'),
+                'kanban-review': APP_STATE.tasks.filter(t => t.status === 'REVIEW'),
+                'kanban-done': APP_STATE.tasks.filter(t => t.status === 'DONE')
+            };
+
+            Object.keys(columns).forEach(columnId => {
+                const container = document.getElementById(columnId);
+                const countElement = document.getElementById(columnId + '-count');
+                if (container) {
+                    container.innerHTML = columns[columnId].map(task => `
+                        <div class="kanban-card" draggable="true" ondragstart="drag(event)" id="task-${task.id}">
+                            <div class="kanban-card-title">${task.title}</div>
+                            <div style="font-size:12px; color:#6b7280;">${task.projectName}</div>
+                            <div style="font-size:12px; color:#6b7280;">👤 ${task.assignee}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                                <span class="priority-badge priority-${task.priority.toLowerCase()}">${task.priority}</span>
+                                <span style="font-size:11px; color:#9ca3af;">⏱ ${task.estimatedHours}h</span>
+                            </div>
+                        </div>
+                    `).join('') || '<div style="text-align:center; color:#9ca3af; padding:20px;">Drop tasks here</div>';
+                }
+                if (countElement) {
+                    countElement.textContent = columns[columnId].length;
+                }
+            });
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drag(event) {
+            event.dataTransfer.setData("text", event.target.closest('.kanban-card')?.id || event.target.id);
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            const taskId = event.dataTransfer.getData("text").replace('task-', '');
+            const targetColumn = event.target.closest('.kanban-cards');
+            if (targetColumn && taskId) {
+                const statusMap = {
+                    'kanban-todo': 'TODO',
+                    'kanban-inprogress': 'IN_PROGRESS',
+                    'kanban-review': 'REVIEW',
+                    'kanban-done': 'DONE'
+                };
+                const newStatus = statusMap[targetColumn.id];
+                const task = APP_STATE.tasks.find(t => t.id === parseInt(taskId));
+                if (task && newStatus) {
+                    const oldStatus = task.status;
+                    task.status = newStatus;
+                    addAuditLog('TASK_MOVE', `Task "${task.title}" moved from ${oldStatus} to ${newStatus}`);
+                    loadKanban();
+                    updateStats();
+                    showToast('Task moved successfully', 'success');
+                }
+            }
+        }
+
+        // ==================== GANTT ====================
+        function loadGantt() {
+            const container = document.getElementById('ganttChart');
+            if (!container) return;
+
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const today = new Date();
+            const currentMonths = [];
+            for (let i = 0; i < 8; i++) {
+                const monthIndex = (today.getMonth() + i) % 12;
+                currentMonths.push(months[monthIndex]);
+            }
+
+            const tasks = APP_STATE.tasks.slice(0, 8).map((task, index) => ({
+                name: task.title,
+                start: index * 8,
+                duration: 10 + Math.floor(Math.random() * 20),
+                color: ['#4f46e5', '#7c3aed', '#2563eb', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4'][index]
+            }));
+
+            container.innerHTML = `
+                <div style="overflow-x:auto;">
+                    <div style="display:flex; border-bottom:2px solid #e5e7eb; padding-bottom:10px; margin-bottom:20px; min-width:800px;">
+                        <div style="width:180px; font-weight:600; flex-shrink:0;">Task</div>
+                        <div style="flex:1; display:flex;">
+                            ${currentMonths.map(m => `<div style="flex:1; text-align:center; font-size:12px; color:#6b7280;">${m}</div>`).join('')}
+                        </div>
+                    </div>
+                    ${tasks.map(task => `
+                        <div style="display:flex; align-items:center; margin-bottom:12px; min-width:800px;">
+                            <div style="width:180px; font-weight:500; flex-shrink:0; font-size:14px;">${task.name}</div>
+                            <div style="flex:1; position:relative; height:32px;">
+                                <div style="position:absolute; left:${task.start}%; width:${task.duration}%; height:100%; background:${task.color}; border-radius:6px; display:flex; align-items:center; padding:0 10px; color:white; font-size:11px; font-weight:500; min-width:60px;">
+                                    ${task.name.substring(0, 20)}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // ==================== AI FEATURES ====================
+        function loadAIInsights() {
+            const container = document.getElementById('aiRecommendations');
+            if (!container) return;
+            generateAIInsights();
+        }
+
+        function generateAIInsights() {
+            const container = document.getElementById('aiRecommendations');
+            if (!container) return;
+
+            const insights = [
+                { type: 'risk', message: `Mobile App project has ${APP_STATE.projects[1]?.health || 65}% health score. Recommend immediate resource reallocation.`,
+                    action: 'View Risk Analysis', icon: 'fa-exclamation-triangle', color: '#ef4444' },
+                { type: 'priority', message: 'AI suggests prioritizing "API integration" task based on dependency analysis.',
+                    action: 'View Tasks', icon: 'fa-sort-amount-down', color: '#3b82f6' },
+                { type: 'optimization',
+                    message: 'Team velocity has decreased by 15%. Consider reducing work in progress from 8 to 5 tasks.',
+                    action: 'View Report', icon: 'fa-chart-line', color: '#f59e0b' },
+                { type: 'prediction',
+                    message: `Website Redesign predicted to complete by ${APP_STATE.projects[0]?.endDate || 'June 2024'} with current velocity.`,
+                    action: 'View Gantt', icon: 'fa-chart-gantt', color: '#10b981' },
+                { type: 'resource',
+                    message: 'John Doe is overallocated with 12 tasks. Consider redistributing to Jane Smith who has 5 tasks.',
+                    action: 'View Team', icon: 'fa-users', color: '#8b5cf6' },
+            ];
+
+            container.innerHTML = insights.map(insight => `
+                <div style="padding:16px; margin-bottom:12px; background:#f9fafb; border-radius:12px; border-left:4px solid ${insight.color}; transition: all 0.3s;">
+                    <div style="display:flex; gap:10px; align-items:flex-start;">
+                        <i class="fas ${insight.icon}" style="color:${insight.color}; font-size:18px; margin-top:2px;"></i>
+                        <div style="flex:1;">
+                            <p style="font-size:14px; margin-bottom:8px;">${insight.message}</p>
+                            <button class="btn btn-sm btn-outline" onclick="handleInsightAction('${insight.type}')">${insight.action} <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleInsightAction(type) {
+            switch(type) {
+                case 'risk':
+                    navigateTo('risk-analysis');
+                    break;
+                case 'priority':
+                    navigateTo('smart-prioritize');
+                    break;
+                case 'optimization':
+                    navigateTo('reports');
+                    break;
+                case 'prediction':
+                    navigateTo('gantt');
+                    break;
+                case 'resource':
+                    navigateTo('team');
+                    break;
+            }
+        }
+
+        function loadRiskAnalysis() {
+            const ctx = document.getElementById('riskChart')?.getContext('2d');
+            if (!ctx) return;
+
+            if (APP_STATE.charts.riskChart) {
+                APP_STATE.charts.riskChart.destroy();
+            }
+
+            const projectNames = APP_STATE.projects.map(p => p.name);
+            const riskScores = APP_STATE.projects.map(p => Math.abs(100 - p.health));
+            const colors = riskScores.map(s => s > 50 ? '#ef4444' : s > 25 ? '#f59e0b' : '#10b981');
+
+            APP_STATE.charts.riskChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: projectNames,
+                    datasets: [{ 
+                        label: 'Risk Score %', 
+                        data: riskScores,
+                        backgroundColor: colors,
+                        borderRadius: 8
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { legend: { display: false } }, 
+                    scales: { y: { max: 100, ticks: { callback: v => v + '%' } } } 
+                }
+            });
+
+            // Load risk factors
+            const riskFactorsContainer = document.getElementById('riskFactors');
+            if (riskFactorsContainer) {
+                const factors = [
+                    { factor: 'Timeline Pressure', score: 72, status: 'high' },
+                    { factor: 'Resource Availability', score: 45, status: 'medium' },
+                    { factor: 'Technical Complexity', score: 60, status: 'medium' },
+                    { factor: 'Stakeholder Alignment', score: 25, status: 'low' },
+                    { factor: 'Budget Constraints', score: 35, status: 'low' },
+                ];
+                riskFactorsContainer.innerHTML = factors.map(f => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #e5e7eb;">
+                        <span>${f.factor}</span>
+                        <span class="risk-indicator risk-${f.status}">${f.score}%</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function loadSmartPrioritize() {
+            runSmartPrioritization();
+        }
+
+        function runSmartPrioritization() {
+            const container = document.getElementById('prioritizedTasks');
+            if (!container) return;
+
+            const sortedTasks = [...APP_STATE.tasks]
+                .filter(t => t.status !== 'DONE')
+                .sort((a, b) => {
+                    const priorityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+                    const aWeight = priorityWeight[a.priority] || 1;
+                    const bWeight = priorityWeight[b.priority] || 1;
+                    if (bWeight !== aWeight) return bWeight - aWeight;
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                });
+
+            container.innerHTML = `
+                <div style="margin-bottom:15px; padding:10px; background:#eff6ff; border-radius:8px; color:#3b82f6; font-weight:600;">
+                    <i class="fas fa-info-circle"></i> AI prioritization based on priority, deadlines, and dependencies
+                </div>
+                ${sortedTasks.map((task, index) => `
+                    <div style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #e5e7eb;">
+                        <span style="font-weight:700; color:#6b7280; min-width:30px;">#${index + 1}</span>
+                        <div style="flex:1;">
+                            <div style="font-weight:600;">${task.title}</div>
+                            <div style="font-size:12px; color:#6b7280;">${task.projectName} | Due: ${task.dueDate} | ${task.estimatedHours}h</div>
+                        </div>
+                        <span class="priority-badge priority-${task.priority.toLowerCase()}">${task.priority}</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function generateMeetingNotes() {
+            const title = document.getElementById('meetingTitle').value || 'Untitled Meeting';
+            const participants = document.getElementById('meetingParticipants').value || 'No participants listed';
+            const rawNotes = document.getElementById('meetingRawNotes').value;
+
+            if (!rawNotes.trim()) {
+                showToast('Please enter some meeting notes or transcript', 'warning');
+                return;
+            }
+
+            const output = document.getElementById('meetingNotesOutput');
+            const summary = generateAIMeetingSummary(title, participants, rawNotes);
+
+            output.innerHTML = `
+                <div style="background:#f0fdf4; padding:20px; border-radius:12px; border:1px solid #10b981;">
+                    <h3 style="color:#059669; margin-bottom:15px;"><i class="fas fa-robot"></i> AI-Generated Meeting Summary</h3>
+                    <div style="margin-bottom:15px;">
+                        <strong>Meeting:</strong> ${title}<br>
+                        <strong>Date:</strong> ${new Date().toLocaleDateString()}<br>
+                        <strong>Participants:</strong> ${participants}
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <h4>Summary</h4>
+                        <p>${summary.summary}</p>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <h4>Action Items</h4>
+                        <ul>
+                            ${summary.actionItems.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Decisions Made</h4>
+                        <ul>
+                            ${summary.decisions.map(d => `<li>${d}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            addAuditLog('MEETING_NOTES', `AI summary generated for "${title}"`);
+            showToast('Meeting notes generated successfully!', 'success');
+        }
+
+        function generateAIMeetingSummary(title, participants, rawNotes) {
+            const summaries = [
+                'The team discussed project progress and identified key blockers. Several action items were assigned to address the critical path.',
+                'Key stakeholders aligned on project priorities for the upcoming sprint. Resource allocation was adjusted to meet deadlines.',
+                'The meeting focused on risk mitigation strategies. The team agreed on a revised timeline with buffer for unexpected delays.',
+            ];
+
+            const actionItemsList = [
+                ['Schedule follow-up meeting for next week', 'Update project documentation', 'Review resource allocation plan', 'Prepare status report for stakeholders'],
+                ['Complete code review for API integration', 'Design new homepage mockups', 'Test mobile app performance', 'Update sprint backlog'],
+                ['Resolve dependency conflicts in backend', 'Conduct user acceptance testing', 'Prepare deployment checklist', 'Update risk register'],
+            ];
+
+            const decisionsList = [
+                ['Extended deadline by 2 weeks', 'Approved additional resources for QA', 'Prioritized security fixes over new features'],
+                ['Adopted new testing framework', 'Reduced scope for MVP release', 'Approved budget increase of 15%'],
+                ['Migrated to cloud infrastructure', 'Implemented daily stand-ups', 'Created dedicated support channel'],
+            ];
+
+            const index = Math.floor(Math.random() * summaries.length);
+            return {
+                summary: summaries[index],
+                actionItems: actionItemsList[index],
+                decisions: decisionsList[index]
+            };
+        }
+
+        function toggleAIChat() {
+            document.getElementById('aiChat').classList.toggle('active');
+        }
+
+        function sendAIMessage() {
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBody = document.getElementById('aiChatBody');
+            chatBody.innerHTML += `
+                <div style="display:flex; gap:10px; align-items:flex-start; flex-direction:row-reverse;">
+                    <div style="width:30px; height:30px; border-radius:50%; background:#4f46e5; display:flex; align-items:center; justify-content:center; color:white; font-weight:600; font-size:12px; flex-shrink:0;">${APP_STATE.currentUser?.initials || 'U'}</div>
+                    <div style="background:#4f46e5; color:white; padding:12px 16px; border-radius:12px; font-size:14px; max-width:80%;">${message}</div>
+                </div>
+            `;
+
+            input.value = '';
+
+            setTimeout(() => {
+                const responses = [
+                    "Based on my analysis, your highest risk project is Mobile App at 65% health. I recommend focusing on API development tasks first and considering additional QA resources.",
+                    `AI prioritization: 1) Fix critical bugs in Mobile App, 2) Complete API documentation for ${APP_STATE.projects[2]?.name || 'API Integration'}, 3) Design review for ${APP_STATE.projects[0]?.name || 'Website'}.`,
+                    "Your team velocity is 85% of target. Consider adding one developer to Mobile App to meet the August deadline. Jane Smith has capacity for 2 more tasks.",
+                    `I predict ${APP_STATE.projects[0]?.name || 'Website Redesign'} will complete on time with 92% confidence. However, Mobile App may be delayed by 2-3 weeks without intervention.`,
+                    "Let me analyze the current workload... John Doe has 12 active tasks (overallocated), while Alice Williams has only 5. I recommend redistributing 3 tasks to balance the team.",
+                    "The AI health score across all projects is 94%. The main concern is the Mobile App project's declining health trend, which has dropped 23% in the last 4 weeks."
+                ];
+                const response = responses[Math.floor(Math.random() * responses.length)];
+
+                chatBody.innerHTML += `
+                    <div style="display:flex; gap:10px; align-items:flex-start;">
+                        <i class="fas fa-robot" style="color:#4f46e5; font-size:20px;"></i>
+                        <div style="background:#f3f4f6; padding:12px 16px; border-radius:12px; font-size:14px; max-width:80%;">${response}</div>
+                    </div>
+                `;
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, 1000);
+
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        // ==================== CALENDAR ====================
+        function loadCalendar() {
+            const container = document.getElementById('calendarView');
+            if (!container) return;
+
+            const today = new Date();
+            const month = today.toLocaleString('default', { month: 'long', year: 'numeric' });
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+
+            let calendarHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <button class="btn btn-sm btn-outline" onclick="changeCalendarMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+                    <h3>${month}</h3>
+                    <button class="btn btn-sm btn-outline" onclick="changeCalendarMonth(1)"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px;">
+            `;
+
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayNames.forEach(d => {
+                calendarHTML +=
+                    `<div style="text-align:center; font-weight:600; color:#6b7280; font-size:12px; padding:8px;">${d}</div>`;
+            });
+
+            // Empty cells for days before the 1st
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += `<div></div>`;
+            }
+
+            // Day cells
+            for (let i = 1; i <= daysInMonth; i++) {
+                const isToday = i === today.getDate();
+                const hasTask = APP_STATE.tasks.some(t => {
+                    const dueDate = new Date(t.dueDate);
+                    return dueDate.getDate() === i && dueDate.getMonth() === today.getMonth();
+                });
+
+                calendarHTML += `
+                    <div style="padding:8px; text-align:center; border-radius:8px; cursor:pointer; 
+                        ${isToday ? 'background:#4f46e5; color:white; font-weight:700;' : 'background:#f9fafb;'}
+                        ${hasTask && !isToday ? 'border:2px solid #f59e0b;' : ''}"
+                         onclick="showToast('Selected: ${month} ${i}${hasTask ? ' - Has tasks due!' : ''}', 'info')">
+                        ${i}
+                        ${hasTask ? '<div style="width:6px; height:6px; background:#f59e0b; border-radius:50%; margin:2px auto 0;"></div>' : ''}
+                    </div>
+                `;
+            }
+
+            calendarHTML += '</div>';
+            container.innerHTML = calendarHTML;
+        }
+
+        function changeCalendarMonth(delta) {
+            showToast('Calendar navigation would update month in production', 'info');
+        }
+
+        // ==================== REPORTS ====================
+        function generateReport(type) {
+            const reportNames = {
+                'progress': 'Progress Report',
+                'risk': 'Risk Assessment Report',
+                'team': 'Team Performance Report',
+                'budget': 'Budget Analysis Report'
+            };
+
+            const reportContent = {
+                'progress': `Project Progress Summary\nGenerated: ${new Date().toLocaleString()}\n\nActive Projects: ${APP_STATE.projects.filter(p => p.status === 'IN_PROGRESS').length}\nCompleted Tasks: ${APP_STATE.tasks.filter(t => t.status === 'DONE').length}\nOverall Health: 84%\n\nTop Performing Project: ${APP_STATE.projects.sort((a, b) => b.health - a.health)[0]?.name || 'N/A'}`,
+                'risk': `Risk Assessment Report\nGenerated: ${new Date().toLocaleString()}\n\nHigh Risk Projects: ${APP_STATE.projects.filter(p => p.health < 70).length}\nMedium Risk: ${APP_STATE.projects.filter(p => p.health >= 70 && p.health < 85).length}\nLow Risk: ${APP_STATE.projects.filter(p => p.health >= 85).length}`,
+                'team': `Team Performance Report\nGenerated: ${new Date().toLocaleString()}\n\nTeam Members: ${APP_STATE.teamMembers.length}\nTotal Tasks Completed: ${APP_STATE.tasks.filter(t => t.status === 'DONE').length}\nAverage Velocity: 85%`,
+                'budget': `Budget Report\nGenerated: ${new Date().toLocaleString()}\n\nTotal Budget: $${APP_STATE.projects.reduce((sum, p) => sum + (p.budget || 0), 0).toLocaleString()}\nProjects: ${APP_STATE.projects.map(p => `${p.name}: $${(p.budget || 0).toLocaleString()}`).join('\n')}`
+            };
+
+            showToast(`${reportNames[type]} generated! Check console for details.`, 'success');
+            console.log(reportContent[type]);
+            addAuditLog('REPORT_GENERATE', `${reportNames[type]} generated`);
+
+            // Create a downloadable blob
+            const blob = new Blob([reportContent[type]], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${type}-report-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ==================== ANALYTICS ====================
+        function loadAnalytics() {
+            const ctx = document.getElementById('velocityChart')?.getContext('2d');
+            if (!ctx) return;
+
+            if (APP_STATE.charts.velocityChart) {
+                APP_STATE.charts.velocityChart.destroy();
+            }
+
+            APP_STATE.charts.velocityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Sprint 5', 'Sprint 6'],
+                    datasets: [
+                        { label: 'Planned', data: [20, 20, 22, 22, 24, 24], backgroundColor: '#4f46e5', borderRadius: 6 },
+                        { label: 'Completed', data: [18, 19, 20, 21, 18, 22], backgroundColor: '#10b981', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Story Points' } } }
+                }
+            });
+        }
+
+        // ==================== TEAM PRODUCTIVITY ====================
+        function loadTeamProductivity() {
+            const container = document.getElementById('teamProductivityTable');
+            if (!container) return;
+
+            container.innerHTML = `
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #e5e7eb;">
+                            <th style="padding:12px; text-align:left;">Member</th>
+                            <th style="padding:12px; text-align:center;">Tasks Done</th>
+                            <th style="padding:12px; text-align:center;">Velocity</th>
+                            <th style="padding:12px; text-align:center;">Efficiency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${APP_STATE.teamMembers.map(m => `
+                            <tr style="border-bottom:1px solid #e5e7eb;">
+                                <td style="padding:12px;">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <div style="width:35px; height:35px; border-radius:8px; background:${m.color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:600;">${m.avatar}</div>
+                                        <div>
+                                            <div style="font-weight:600;">${m.name}</div>
+                                            <div style="font-size:12px; color:#6b7280;">${m.role}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding:12px; text-align:center; font-weight:600;">${m.tasksCompleted}</td>
+                                <td style="padding:12px; text-align:center;">
+                                    <div class="progress-bar" style="width:100px; margin:0 auto;">
+                                        <div class="progress-fill" style="width:${70 + Math.random() * 30}%;"></div>
+                                    </div>
+                                </td>
+                                <td style="padding:12px; text-align:center; font-weight:600; color:#10b981;">${Math.floor(80 + Math.random() * 20)}%</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // ==================== TEAM MEMBERS ====================
+        function loadTeamMembers() {
+            const container = document.getElementById('teamMembersList');
+            if (!container) return;
+
+            container.innerHTML = APP_STATE.teamMembers.map(member => `
+                <div class="stat-card">
+                    <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                        <div style="width:50px; height:50px; border-radius:14px; background:${member.color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:18px;">${member.avatar}</div>
+                        <div>
+                            <h3 style="font-size:16px;">${member.name}</h3>
+                            <p style="font-size:13px; color:#6b7280;">${member.role}</p>
+                        </div>
+                        <span style="margin-left:auto; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; 
+                            ${member.status === 'Online' ? 'background:#f0fdf4; color:#10b981;' : 'background:#fefce8; color:#f59e0b;'}">
+                            ${member.status}
+                        </span>
+                    </div>
+                    <div style="display:flex; gap:20px; font-size:13px; color:#6b7280;">
+                        <span><i class="fas fa-envelope"></i> ${member.email}</span>
+                        <span><i class="fas fa-check-circle"></i> ${member.tasksCompleted} tasks</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showInviteMemberModal() {
+            document.getElementById('inviteMemberModal').classList.add('active');
+        }
+
+        function inviteMember(event) {
+            event.preventDefault();
+            const email = document.getElementById('inviteEmail').value;
+            const role = document.getElementById('inviteRole').value;
+            const message = document.getElementById('inviteMessage').value;
+
+            addAuditLog('INVITE', `Invitation sent to ${email} for role: ${role}`);
+            closeModal('inviteMemberModal');
+            document.getElementById('inviteMemberForm').reset();
+            showToast(`Invitation sent to ${email}!`, 'success');
+        }
+
+        // ==================== TEAM CHAT ====================
+        function loadChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            const chatUsers = document.getElementById('chatUsers');
+
+            if (chatUsers) {
+                chatUsers.innerHTML = `
+                    <h4 style="margin-bottom:15px;">Team Members</h4>
+                    ${APP_STATE.teamMembers.map(m => `
+                        <div style="display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; cursor:pointer; margin-bottom:5px;"
+                             onclick="showToast('Chat with ${m.name}', 'info')">
+                            <div style="width:35px; height:35px; border-radius:50%; background:${m.color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:600; font-size:12px;">${m.avatar}</div>
+                            <div>
+                                <div style="font-weight:500; font-size:14px;">${m.name}</div>
+                                <div style="font-size:11px; color:${m.status === 'Online' ? '#10b981' : '#f59e0b'};">${m.status}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            if (chatMessages) {
+                if (APP_STATE.chatMessages.length === 0) {
+                    // Add some initial messages
+                    APP_STATE.chatMessages = [
+                        { sender: 'Jane Smith', initials: 'JS', text: 'Hey team, how is the Mobile App progress?', time: '10:30 AM', sent: false },
+                        { sender: 'You', initials: APP_STATE.currentUser?.initials || 'U', text: 'Making good progress! API is almost done.', time: '10:32 AM', sent: true },
+                        { sender: 'Bob Johnson', initials: 'BJ', text: 'I found a bug in the payment module.', time: '10:35 AM', sent: false },
+                    ];
+                }
+
+                chatMessages.innerHTML = APP_STATE.chatMessages.map(msg => `
+                    <div class="message-bubble ${msg.sent ? 'message-sent' : 'message-received'}">
+                        <div style="font-size:11px; opacity:0.7; margin-bottom:3px;">${msg.sender} • ${msg.time}</div>
+                        ${msg.text}
+                    </div>
+                `).join('');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            APP_STATE.chatMessages.push({
+                sender: 'You',
+                initials: APP_STATE.currentUser?.initials || 'U',
+                text: message,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                sent: true
+            });
+
+            input.value = '';
+            loadChat();
+
+            // Simulate response
+            if (APP_STATE.socket) {
+                APP_STATE.socket.emit('chatMessage', { message, user: APP_STATE.currentUser?.name });
+            }
+        }
+
+        // ==================== PROFILE ====================
+        function loadProfile() {
+            if (APP_STATE.currentUser) {
+                document.getElementById('profileAvatar').textContent = APP_STATE.currentUser.initials;
+                document.getElementById('profileName').textContent = APP_STATE.currentUser.name;
+                document.getElementById('profileEmail').textContent = APP_STATE.currentUser.email;
+                document.getElementById('profileRole').textContent = APP_STATE.currentUser.role.replace('_', ' ');
+                document.getElementById('profileNameInput').value = APP_STATE.currentUser.name;
+                document.getElementById('profileEmailInput').value = APP_STATE.currentUser.email;
+                document.getElementById('profilePhoneInput').value = APP_STATE.currentUser.phone || '';
+            }
+        }
+
+        function updateProfile(event) {
+            event.preventDefault();
+            const name = document.getElementById('profileNameInput').value;
+            const email = document.getElementById('profileEmailInput').value;
+            const phone = document.getElementById('profilePhoneInput').value;
+
+            APP_STATE.currentUser.name = name;
+            APP_STATE.currentUser.email = email;
+            APP_STATE.currentUser.phone = phone;
+            APP_STATE.currentUser.initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+            localStorage.setItem('currentUser', JSON.stringify(APP_STATE.currentUser));
+
+            document.getElementById('userAvatar').textContent = APP_STATE.currentUser.initials;
+            document.getElementById('userName').textContent = APP_STATE.currentUser.name;
+
+            addAuditLog('PROFILE_UPDATE', 'User profile updated');
+            showToast('Profile updated successfully!', 'success');
+            loadProfile();
+        }
+
+        // ==================== SETTINGS & AUDIT ====================
+        function loadSettings() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            document.getElementById('defaultView').value = localStorage.getItem('defaultView') || 'dashboard';
+            document.getElementById('emailNotif').checked = localStorage.getItem('emailNotif') !== 'false';
+            document.getElementById('pushNotif').checked = localStorage.getItem('pushNotif') !== 'false';
+            document.getElementById('desktopNotif').checked = localStorage.getItem('desktopNotif') === 'true';
+        }
+
+        function saveSettings() {
+            localStorage.setItem('defaultView', document.getElementById('defaultView').value);
+            localStorage.setItem('emailNotif', document.getElementById('emailNotif').checked);
+            localStorage.setItem('pushNotif', document.getElementById('pushNotif').checked);
+            localStorage.setItem('desktopNotif', document.getElementById('desktopNotif').checked);
+            showToast('Settings saved!', 'success');
+            addAuditLog('SETTINGS_UPDATE', 'User settings updated');
+        }
+
+        function loadAuditLog() {
+            const container = document.getElementById('auditLogTable');
+            if (!container) return;
+
+            const logs = APP_STATE.auditLogs.slice(-30).reverse();
+            container.innerHTML = logs.length > 0 ? `
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead><tr style="border-bottom:2px solid #e5e7eb;">
+                            <th style="padding:12px; text-align:left;">Time</th>
+                            <th style="padding:12px; text-align:left;">Action</th>
+                            <th style="padding:12px; text-align:left;">Details</th>
+                        </tr></thead>
+                        <tbody>
+                            ${logs.map(log => `
+                                <tr style="border-bottom:1px solid #e5e7eb;">
+                                    <td style="padding:12px; font-size:13px; white-space:nowrap;">${log.time}</td>
+                                    <td style="padding:12px; font-size:13px; font-weight:600;">
+                                        <span style="padding:4px 8px; border-radius:6px; font-size:11px; 
+                                            ${log.action.includes('CREATE') ? 'background:#f0fdf4; color:#10b981;' : 
+                                              log.action.includes('DELETE') ? 'background:#fef2f2; color:#ef4444;' :
+                                              log.action.includes('LOGIN') || log.action.includes('LOGOUT') ? 'background:#eff6ff; color:#3b82f6;' :
+                                              'background:#f3f4f6; color:#6b7280;'}">
+                                            ${log.action}
+                                        </span>
+                                    </td>
+                                    <td style="padding:12px; font-size:13px;">${log.details}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            ` : '<p style="text-align:center; color:#9ca3af; padding:30px;">No audit logs available.</p>';
+        }
+
+        function exportAuditLog() {
+            const csv = 'Time,Action,Details\n' + APP_STATE.auditLogs.map(l => `"${l.time}","${l.action}","${l.details}"`).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Audit log exported!', 'success');
+        }
+
+        function addAuditLog(action, details) {
+            APP_STATE.auditLogs.push({
+                time: new Date().toLocaleString(),
+                action,
+                details
+            });
+            if (APP_STATE.auditLogs.length > 100) APP_STATE.auditLogs.shift();
+        }
+
+        // ==================== TASK MANAGEMENT ====================
+        function showNewTaskModal() {
+            // Populate project dropdown
+            const projectSelect = document.getElementById('taskProject');
+            projectSelect.innerHTML = '<option value="">Select Project</option>' +
+                APP_STATE.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+            document.getElementById('newTaskModal').classList.add('active');
+            document.getElementById('taskDueDate').value = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        }
+
+        function createTask(event) {
+            event.preventDefault();
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDescription').value;
+            const projectId = document.getElementById('taskProject').value;
+            const priority = document.getElementById('taskPriority').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+            const estimatedHours = document.getElementById('taskEstHours').value;
+            const assignee = document.getElementById('taskAssignee').value;
+            const tags = document.getElementById('taskTags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+            const project = APP_STATE.projects.find(p => p.id === parseInt(projectId));
+            const newTask = {
+                id: APP_STATE.tasks.length + 1,
+                title,
+                description,
+                projectId: parseInt(projectId) || 1,
+                projectName: project?.name || 'Unknown Project',
+                status: 'TODO',
+                priority,
+                dueDate: dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                assignee: assignee || APP_STATE.currentUser?.name || 'Unassigned',
+                estimatedHours: parseInt(estimatedHours) || 8,
+                tags
+            };
+
+            APP_STATE.tasks.push(newTask);
+            addAuditLog('TASK_CREATE', `Task "${title}" created`);
+            closeModal('newTaskModal');
+            document.getElementById('newTaskForm').reset();
+            document.getElementById('subtasksList').innerHTML = `
+                <div class="checklist-item">
+                    <input type="checkbox" id="subtask1">
+                    <input type="text" class="form-input" placeholder="Subtask 1" style="flex:1;">
+                </div>
+            `;
+            updateStats();
+            if (APP_STATE.currentView === 'dashboard') loadTasks();
+            if (APP_STATE.currentView === 'kanban') loadKanban();
+            showToast('Task created successfully!', 'success');
+        }
+
+        function addSubtask() {
+            const container = document.getElementById('subtasksList');
+            const count = container.children.length + 1;
+            container.innerHTML += `
+                <div class="checklist-item">
+                    <input type="checkbox" id="subtask${count}">
+                    <input type="text" class="form-input" placeholder="Subtask ${count}" style="flex:1;">
+                </div>
+            `;
+        }
+
+        // ==================== FILE UPLOAD ====================
+        function handleFileUpload(input) {
+            const files = input.files;
+            if (files.length > 0) {
+                const status = document.getElementById('fileUploadStatus');
+                const fileNames = Array.from(files).map(f => f.name).join(', ');
+                if (status) status.textContent = `Selected: ${fileNames}`;
+                showToast(`${files.length} file(s) selected`, 'info');
+            }
+        }
+
+        // ==================== MODALS ====================
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // ==================== SEARCH ====================
+        function handleGlobalSearch(query) {
+            if (query.length < 2) return;
+            const results = [
+                ...APP_STATE.projects.filter(p => p.name.toLowerCase().includes(query.toLowerCase())),
+                ...APP_STATE.tasks.filter(t => t.title.toLowerCase().includes(query.toLowerCase()))
+            ];
+            if (results.length > 0) {
+                // Show search results dropdown (simplified)
+                console.log('Search results:', results.length);
+            }
+        }
+
+        // ==================== NOTIFICATIONS ====================
+        function showNotifications() {
+            const unread = APP_STATE.notifications.filter(n => !n.read);
+            const notificationList = APP_STATE.notifications.map(n => `• ${n.message} (${n.time})`).join('\n');
+            const message = unread.length > 0 ?
+                `You have ${unread.length} unread notifications:\n\n${notificationList}` :
+                `All notifications:\n\n${notificationList || 'No notifications'}`;
+
+            if (confirm(message + '\n\nMark all as read?')) {
+                APP_STATE.notifications.forEach(n => n.read = true);
+                updateNotificationDot();
+            }
+        }
+
+        function updateNotificationDot() {
+            const dot = document.getElementById('notificationDot');
+            if (dot) {
+                const hasUnread = APP_STATE.notifications.some(n => !n.read);
+                dot.style.display = hasUnread ? 'block' : 'none';
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ==================== SOCKET.IO ====================
+        function initializeSocket() {
+            try {
+                APP_STATE.socket = io('http://localhost:4000/projectflow', {
+                    auth: { token: localStorage.getItem('authToken') },
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000
+                });
+
+                APP_STATE.socket.on('connect', () => {
+                    console.log('WebSocket connected');
+                });
+
+                APP_STATE.socket.on('notification', (data) => {
+                    APP_STATE.notifications.unshift({
+                        id: Date.now(),
+                        message: data.message,
+                        type: data.type || 'info',
+                        read: false,
+                        time: 'Just now'
+                    });
+                    updateNotificationDot();
+                    showToast(data.message, 'info');
+                });
+
+                APP_STATE.socket.on('chatMessage', (data) => {
+                    APP_STATE.chatMessages.push({
+                        sender: data.user,
+                        initials: data.user?.substring(0, 2).toUpperCase() || 'U',
+                        text: data.message,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        sent: false
+                    });
+                    if (APP_STATE.currentView === 'chat') loadChat();
+                });
+
+                APP_STATE.socket.on('disconnect', () => {
+                    console.log('WebSocket disconnected');
+                });
+
+                APP_STATE.socket.on('connect_error', () => {
+                    console.log('WebSocket running in offline mode');
+                });
+            } catch (error) {
+                console.log('WebSocket initialization - offline mode');
+            }
+        }
+
+        // ==================== UTILITIES ====================
+        function exportChart(chartId) {
+            const canvas = document.getElementById(chartId);
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = `${chartId}-export-${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('Chart exported successfully!', 'success');
+                addAuditLog('EXPORT', `Chart ${chartId} exported`);
+            }
+        }
+
+        // Update notification dot periodically
+        setInterval(updateNotificationDot, 10000);
+
+        // Handle window resize for sidebar
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key.toLowerCase()) {
+                    case 'k':
+                        e.preventDefault();
+                        document.getElementById('globalSearch').focus();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        showNewTaskModal();
+                        break;
+                    case 'p':
+                        e.preventDefault();
+                        showNewProjectModal();
+                        break;
+                    case 'd':
+                        e.preventDefault();
+                        navigateTo('dashboard');
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        navigateTo('kanban');
+                        break;
+                }
+            }
+        });
+
+        console.log('%c🚀 ProjectFlow AI v2.0 Ready %c| %cAll features active',
+            'color:#4f46e5; font-size:16px; font-weight:bold;',
+            '',
+            'color:#10b981;');
+        console.log('%c💡 Tips: %cCtrl+K to search | Ctrl+N new task | Ctrl+P new project | Ctrl+D dashboard | Ctrl+B kanban',
+            'font-weight:bold;', '');
+    </script>
+</body>
+</html>

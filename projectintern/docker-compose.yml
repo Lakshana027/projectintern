@@ -1,0 +1,77 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: projectflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: projectflow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - projectflow-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: projectflow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - projectflow-network
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: projectflow-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - projectflow-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: projectflow-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/projectflow?schema=public
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    networks:
+      - projectflow-network
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  uploads:
+
+networks:
+  projectflow-network:
+    driver: bridge
