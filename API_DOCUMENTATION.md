@@ -1,61 +1,73 @@
-# ProjectIntern
+# API Documentation
 
-## Overview
+## Authentication
 
-ProjectIntern is a web-based project management system that allows users to manage projects, authenticate users, communicate in real time, and monitor project activities.
+### Login
 
-## Features
+POST /auth/login
 
-* User Authentication
-* Project Management
-* Real-Time Communication using WebSockets
-* Dashboard Interface
-* Database Integration using Prisma
-* REST API Support
+Request:
 
-## Technology Stack
+{
+"email": "[user@example.com](mailto:user@example.com)",
+"password": "password"
+}
 
-### Frontend
+Response:
 
-* HTML
-* CSS
-* JavaScript
+{
+"token": "jwt-token"
+}
 
-### Backend
+## Register
 
-* Node.js
-* NestJS
+POST /auth/register
 
-### Database
+Request:
 
-* Prisma ORM
+{
+"name": "User",
+"email": "[user@example.com](mailto:user@example.com)",
+"password": "password"
+}
 
-## Installation
+Response:
 
-### Clone Repository
+{
+"message": "User registered successfully"
+}
 
-git clone https://github.com/Lakshana027/projectintern.git
+## Projects
 
-### Navigate to Project
+### Get All Projects
 
-cd projectintern
+GET /projects
 
-### Install Dependencies
+### Create Project
 
-npm install
+POST /projects
 
-### Run Application
+Request:
 
-npm run start
+{
+"title": "Project Name",
+"description": "Project Description"
+}
 
-### Development Mode
+### Update Project
 
-npm run start:dev
+PUT /projects/:id
 
-## Deployment
+### Delete Project
 
-The application is deployed on Vercel.
+DELETE /projects/:id
 
-## Author
+## WebSocket Events
 
-Lakshana S
+connect
+
+disconnect
+
+projectUpdate
+
+notification
